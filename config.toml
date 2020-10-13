@@ -1,0 +1,77 @@
+baseURL = "https://example.com"
+title = "Hannah Cardoza"
+languageCode = "en"
+theme = "soho"
+enableInlineShortcodes = true
+
+summarylength = 10
+enableEmoji = true
+
+[params]
+author = "Hannah Cardoza"
+description = "2A Biomedical Engineering Student"
+
+## Set one of:
+# gravatar = "hannah.cardoza@gmail.com"
+profilePicture = "images/profile.jpg"
+
+copyright = "Hannah Cardoza"
+license = "CC BY-SA 4.0"
+licenseURL = "https://creativecommons.org/licenses/by-sa/4.0"
+
+## Set custom theme color.
+# themeColor = "#fc2803"
+
+## Set custom CSS and/or JS to override site defaults.
+customCss = ["css/blog.css"]
+customJs = ["js/blog.js"]
+
+  ## Set as many as you want.
+  [[params.socialIcons]]
+  icon = "fa-linkedin"
+  title = "Linkedin"
+  url = "https://linkedin.com/in/hannahcardoza"
+
+[menu]
+  [[menu.main]]
+  name = "Education"
+  weight = 200
+  identifier = "Education"
+  url = "/Education/"
+
+  [[menu.main]]
+  name = "Employment"
+  identifier = "Employment"
+  weight = 200
+  url = "/Employment/"
+  
+  [[menu.main]]
+  name = "Projects"
+  identifier = "Projects"
+  weight = 200
+  url = "/Projects/"
+    
+  [[menu.main]]
+  name = "Sports"
+  identifier = "Sports"
+  weight = 200
+  url = "/Sports/"
+
+
+[taxonomies]
+  category = "categories"
+  series = "series"
+  tag = "tags"
+
+[markup]
+
+  [markup.highlight]
+  codeFences = true
+  guessSyntax = false
+  hl_Lines = ""
+  lineNoStart = 1
+  lineNos = false
+  lineNumbersInTable = true
+  noClasses = true # if false, you need to provide you own custom CSS
+  style = "monokai"
+  tabWidth = 4
