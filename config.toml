@@ -1,7 +1,6 @@
 baseURL = "/"
 title = "Hannah Cardoza"
 languageCode = "en"
-theme = "soho"
 enableInlineShortcodes = true
 
 summarylength = 10
