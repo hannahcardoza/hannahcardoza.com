@@ -14,6 +14,7 @@ docs/                    Site root, served by GitHub Pages
 ├── assets/
 │   ├── styles.css       Compiled Tailwind CSS from the original design (don't hand-edit)
 │   ├── site.css         Custom styles: ticker banner and contact popup
+│   ├── site.js          Footer visitor counter
 │   └── og.png           Link preview image
 ├── favicon.svg / favicon.ico / apple-touch-icon.png
 ├── robots.txt, sitemap.xml
@@ -34,6 +35,10 @@ Then open http://localhost:8000. Pages use root-relative paths (`/assets/...`), 
 - Each page is a standalone HTML file. The header, ticker, nav, footer, and contact popup are repeated in every page, so update all five files when changing them.
 - `styles.css` is precompiled Tailwind, so only utility classes already used on the site are available. Put new styles in `site.css`.
 - Add new pages to `sitemap.xml`.
+
+## Analytics
+
+Page views are tracked with [GoatCounter](https://hannahcardoza.goatcounter.com) (no cookies). The footer visitor number comes from GoatCounter's public counter, which needs "Allow adding visitor counts on your website" turned on in GoatCounter settings. Visits from localhost aren't counted.
 
 ## Deploy
 
