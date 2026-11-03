@@ -1,0 +1,6 @@
+.ticker{overflow:hidden;background:var(--citric);color:var(--klein);font-family:VT323,Courier New,monospace;font-size:1.25rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+.ticker-track{display:inline-flex;padding:.4rem 0;animation:ticker 40s linear infinite}
+.ticker-track span{padding-right:2rem}
+.ticker:hover .ticker-track{animation-play-state:paused}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker-track{animation:none}}
