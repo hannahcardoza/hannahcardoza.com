@@ -121,3 +121,10 @@
 @media (max-width:639px){.panel-fill{min-height:0}.panel-fill .panel-body::after{display:none}.panel-fill .dash-pins{position:static}.panel-fill .dash-pins li:nth-child(n+7){display:none}}
 .panel-fill{min-height:12rem}
 .dash-done{white-space:nowrap}
+.panel-fill .panel-body{padding:0}
+.panel-fill .panel-body::after{display:none}
+.panel-fill .dash-pins{position:absolute;inset:0;padding:1rem;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--aqua) transparent}
+.panel-fill .dash-pins::-webkit-scrollbar{width:6px}
+.panel-fill .dash-pins::-webkit-scrollbar-thumb{background:var(--aqua);border-radius:3px}
+.panel-fill .dash-pins::-webkit-scrollbar-track{background:transparent}
+@media (max-width:639px){.panel-fill .panel-body{padding:1rem}.panel-fill .dash-pins{position:static;padding:0;overflow:visible}}
