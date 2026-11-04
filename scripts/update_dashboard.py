@@ -37,6 +37,7 @@ FINISHED_FILE = Path(__file__).resolve().parent / "goodreads_finished.json"
 UA = "hannahcardoza.com dashboard (+https://hannahcardoza.com)"
 IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com", "i.gr-assets.com",
                "i.scdn.co", "mosaic.scdn.co", "image-cdn-ak.spotifycdn.com", "image-cdn-fa.spotifycdn.com"}
+KPIS = {}  # headline numbers collected by the renderers: key -> (value, label)
 DEFAULT_PAGE = Path(__file__).resolve().parent.parent / "docs" / "web-log" / "now-playing" / "index.html"
 
 
@@ -76,21 +77,25 @@ def stars(rating):
 def render_letterboxd():
     ns = {"letterboxd": "https://letterboxd.com"}
     root = ET.fromstring(fetch(f"https://letterboxd.com/{LETTERBOXD_USER}/rss/"))
-    films = []
+    films, this_year, year = [], 0, str(dt.date.today().year)
     for it in root.findall("./channel/item"):
         title = it.findtext("letterboxd:filmTitle", namespaces=ns)
         if not title:
             continue  # lists and other non-diary items
+        if (it.findtext("letterboxd:watchedDate", namespaces=ns) or "").startswith(year):
+            this_year += 1
+        if len(films) == 4:
+            continue
         films.append({
             "title": title,
             "year": it.findtext("letterboxd:filmYear", namespaces=ns) or "",
             "rating": stars(it.findtext("letterboxd:memberRating", namespaces=ns)),
             "poster": first_img(it.findtext("description")),
         })
-        if len(films) == 4:
-            break
     if not films:
         raise ValueError("no films in feed")
+    # The feed holds the 50 most recent entries, so 50 means "at least 50".
+    KPIS["films"] = (f"{this_year}+" if this_year >= 50 else str(this_year), f"films logged in {year}")
     cards = []
     for f in films:
         img = (f'<img src="{esc(f["poster"])}" alt="Poster for {esc(f["title"])}" loading="lazy" width="150" height="225"/>'
@@ -98,8 +103,7 @@ def render_letterboxd():
         year = f' <span class="dash-year">{esc(f["year"])}</span>' if f["year"] else ""
         rating = f'<span class="dash-stars">{esc(f["rating"])}</span>' if f["rating"] else ""
         cards.append(f'<li>{img}<span class="dash-cap">{esc(f["title"])}{year}</span>{rating}</li>')
-    return ('<h3 class="dash-h">&gt; Watching <span class="dash-src">via Letterboxd</span></h3>'
-            '<ul class="dash-films">' + "".join(cards) + "</ul>")
+    return '<ul class="dash-films">' + "".join(cards) + "</ul>"
 
 
 
@@ -192,6 +196,8 @@ def render_goodreads():
     if not current and not read:
         raise ValueError("no books on either shelf")
     months = finished_months(read)
+    year = str(dt.date.today().year)
+    KPIS["books"] = (str(sum(1 for b in read if (months.get(b["title"]) or "").endswith(year))), f"books read in {year}")
 
     def completed_key(b):  # newest completion first, undated books last
         try:
@@ -208,10 +214,14 @@ def render_goodreads():
         tag = ""
         if done:
             when = months.get(b["title"])
+            try:
+                when = dt.datetime.strptime(when or "", "%B %Y").strftime("%b %Y")
+            except ValueError:
+                pass
             tag = f'<span class="dash-done">✓ {esc(when)}</span>' if when else '<span class="dash-done">✓</span>'
         return f'<li>{img}<span class="dash-cap">{esc(b["title"])}</span>{by}{rating}{tag}</li>'
 
-    out = '<h3 class="dash-h">&gt; Reading <span class="dash-src">via Goodreads</span></h3>'
+    out = ""
     if current:
         out += ('<p class="dash-sub dash-sub-now">Currently reading</p><ul class="dash-films">'
                 + "".join(card(b, False) for b in current[:4]) + "</ul>")
@@ -279,12 +289,15 @@ def render_spotify():
         if len(recent) == 5:
             break
     top = spotify_get("me/top/tracks?time_range=short_term&limit=5", token).get("items", [])
+    artists = spotify_get("me/top/artists?time_range=short_term&limit=1", token).get("items", [])
+    if artists:
+        KPIS["artist"] = (artists[0].get("name", ""), "top artist this month")
     playlists = [pl for pl in spotify_get("me/playlists?limit=50", token).get("items", [])
                  if pl and pl.get("public") and (pl.get("owner") or {}).get("id") == me.get("id")][:6]
     if not (recent or top or playlists):
         raise ValueError("no Spotify data")
 
-    out = '<h3 class="dash-h">&gt; Listening <span class="dash-src">via Spotify</span></h3><div class="dash-cols">'
+    out = '<div class="dash-cols">'
     if recent:
         out += '<div><p class="dash-sub dash-sub-spot">Recently played</p><ul class="dash-tracks">' + "".join(track_row(t) for t in recent) + "</ul></div>"
     if top:
@@ -308,7 +321,7 @@ RUN_TYPES = {"Run", "TrailRun", "VirtualRun"}
 
 
 def render_strava():
-    """Year-to-date running totals. Totals only: no maps, routes, or times."""
+    """Year-to-date fitness totals. Totals only: no maps, routes, or times of day."""
     cid, secret, refresh = env("STRAVA_CLIENT_ID"), env("STRAVA_CLIENT_SECRET"), env("STRAVA_REFRESH_TOKEN")
     if not (cid and secret and refresh):
         raise ValueError("Strava credentials not set")
@@ -317,7 +330,7 @@ def render_strava():
     tok = json.loads(fetch("https://www.strava.com/oauth/token", data=body))
     if tok.get("refresh_token") and tok["refresh_token"] != refresh:
         print("warning: Strava issued a new refresh token. Rerun scripts/strava_auth.py "
-              "if the Running section stops updating.", file=sys.stderr)
+              "if the Fitness section stops updating.", file=sys.stderr)
     year = dt.date.today().year
     after = int(dt.datetime(year, 1, 1).timestamp())
     acts, page = [], 1
@@ -332,10 +345,105 @@ def render_strava():
     hikes = [a for a in acts if a.get("sport_type") == "Hike"]
     km = sum(a.get("distance", 0) for a in runs) / 1000
     longest = max((a.get("distance", 0) for a in runs), default=0) / 1000
-    tiles = [(f"{km:.1f}", f"km run in {year}"), (str(len(runs)), "runs"),
-             (f"{longest:.1f}", "km longest run"), (str(len(hikes)), "hikes")]
-    return ('<h3 class="dash-h">&gt; Running <span class="dash-src">via Strava</span></h3><ul class="dash-stats">'
-            + "".join(f'<li><span class="dash-num">{esc(v)}</span><span class="dash-label">{esc(k)}</span></li>' for v, k in tiles)
+    KPIS["km"] = (f"{km:.1f}", f"km run in {year}")
+    tiles = [(str(len(runs)), "runs"), (f"{longest:.1f}", "km longest run"),
+             (str(len(hikes)), "hikes"), (str(len(acts)), "activities")]
+    out = ('<ul class="dash-stats">'
+           + "".join(f'<li><span class="dash-num">{esc(v)}</span><span class="dash-label">{esc(k)}</span></li>' for v, k in tiles)
+           + "</ul>")
+    out += monthly_chart(acts, year)
+    if acts:
+        out += latest_activity(max(acts, key=lambda a: a.get("start_date", "")))
+    return out
+
+
+def monthly_chart(acts, year):
+    """Column chart of distance per month (all activities), as inline SVG.
+
+    Single series, so no legend: the subtitle names it. Each column has a
+    native tooltip, and a visually hidden table carries the same numbers.
+    """
+    months = dt.date.today().month if year == dt.date.today().year else 12
+    km = [0.0] * months
+    for a in acts:
+        m = int(a["start_date_local"][5:7])
+        if m <= months:
+            km[m - 1] += a.get("distance", 0) / 1000
+    top = max(km) if any(km) else 1
+    step = next(s for s in (5, 10, 20, 25, 50, 100, 200, 500) if top / s <= 4)
+    ymax = step * -(-top // step)
+    W, H, L, B, T = 420, 150, 30, 20, 14  # size and left/bottom/top padding
+    slot = (W - L) / months
+    bw = min(24, slot * 0.6)
+    y = lambda v: T + (H - T - B) * (1 - v / ymax)
+    parts = [f'<svg class="dash-chart" viewBox="0 0 {W} {H}" role="img" aria-label="Distance per month in {year}">']
+    tick = 0
+    while tick <= ymax:  # recessive hairline grid with clean tick labels
+        parts.append(f'<line class="grid" x1="{L}" x2="{W}" y1="{y(tick):.1f}" y2="{y(tick):.1f}"/>'
+                     f'<text class="tick" x="{L - 6}" y="{y(tick) + 4:.1f}" text-anchor="end">{tick:g}</text>')
+        tick += step
+    peak = km.index(top) if any(km) else -1
+    for i, v in enumerate(km):
+        cx = L + slot * i + slot / 2
+        name = dt.date(year, i + 1, 1).strftime("%b")
+        if v > 0:
+            x0, x1, y0, yb = cx - bw / 2, cx + bw / 2, y(v), y(0)
+            r = min(4, (yb - y0), bw / 2)
+            d = (f"M{x0:.1f},{yb:.1f}V{y0 + r:.1f}Q{x0:.1f},{y0:.1f} {x0 + r:.1f},{y0:.1f}"
+                 f"H{x1 - r:.1f}Q{x1:.1f},{y0:.1f} {x1:.1f},{y0 + r:.1f}V{yb:.1f}Z")
+            parts.append(f'<g class="bar" tabindex="0"><title>{name} {year}: {v:.1f} km</title>'
+                         f'<rect class="hit" x="{L + slot * i:.1f}" y="{T}" width="{slot:.1f}" height="{H - T - B}"/>'
+                         f'<path d="{d}"/></g>')
+            if i == peak:
+                parts.append(f'<text class="peak" x="{cx:.1f}" y="{y0 - 4:.1f}" text-anchor="middle">{v:.0f}</text>')
+        parts.append(f'<text class="tick" x="{cx:.1f}" y="{H - 5}" text-anchor="middle">{name[0]}</text>')
+    parts.append(f'<line class="axis" x1="{L}" x2="{W}" y1="{y(0):.1f}" y2="{y(0):.1f}"/></svg>')
+    rows = "".join(f"<tr><td>{dt.date(year, i + 1, 1):%B}</td><td>{v:.1f}</td></tr>" for i, v in enumerate(km))
+    table = f'<table class="sr-only"><caption>Distance per month in {year}</caption><tr><th>Month</th><th>km</th></tr>{rows}</table>'
+    return (f'<p class="dash-sub dash-sub-run">Distance per month, km (all activities)</p>'
+            f'<div class="dash-chart-wrap">{"".join(parts)}{table}</div>')
+
+
+def render_kpis(previous):
+    """Headline tiles. A tile whose source failed keeps its previous value."""
+    old = {key: tile for tile, key in re.findall(r'(<li data-kpi="(\w+)">.*?</li>)', previous, re.S)}
+    tiles = []
+    for key in ("films", "books", "km", "artist"):
+        if key in KPIS:
+            value, label = KPIS[key]
+            cls = " dash-kpi-text" if key == "artist" else ""
+            tiles.append(f'<li data-kpi="{key}"><span class="dash-kpi{cls}">{esc(value)}</span>'
+                         f'<span class="dash-label">{esc(label)}</span></li>')
+        elif key in old:
+            tiles.append(old[key])
+    if not tiles:
+        raise ValueError("no headline numbers")
+    return '<ul class="dash-kpis">' + "".join(tiles) + "</ul>"
+
+
+def duration(seconds):
+    h, rem = divmod(int(seconds), 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
+
+
+def latest_activity(a):
+    """Most recent activity: type, date, and stats. No title, map, location, or time of day."""
+    kind = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", a.get("sport_type") or a.get("type") or "Activity")
+    day = dt.date.fromisoformat(a["start_date_local"][:10])
+    km = a.get("distance", 0) / 1000
+    stats = []
+    if km:
+        stats.append(("Distance", f"{km:.2f} km"))
+    if a.get("moving_time"):
+        stats.append(("Time", duration(a["moving_time"])))
+    if km and a.get("moving_time") and a.get("sport_type") in RUN_TYPES:
+        stats.append(("Pace", f"{duration(a['moving_time'] / km)} /km"))
+    if a.get("total_elevation_gain"):
+        stats.append(("Elevation", f"{a['total_elevation_gain']:.0f} m"))
+    return (f'<p class="dash-sub dash-sub-run">Latest activity · {esc(kind)} · {day:%b} {day.day}, {day.year}</p>'
+            '<ul class="dash-latest">'
+            + "".join(f'<li><span class="dash-label">{esc(k)}</span><span class="dash-val">{esc(v)}</span></li>' for k, v in stats)
             + "</ul>")
 
 
@@ -350,7 +458,7 @@ def render_pinterest():
             break
     if not pins:
         raise ValueError("no pins in feed")
-    return ('<h3 class="dash-h">&gt; Pinning <span class="dash-src">via Pinterest</span></h3><ul class="dash-pins">'
+    return ('<ul class="dash-pins">'
             + "".join(f'<li><img src="{esc(src)}" alt="{esc(alt)}" loading="lazy"/></li>' for src, alt in pins)
             + "</ul>")
 
@@ -378,6 +486,12 @@ def main():
         except Exception as e:  # keep the previous content for this source
             failed.append(name)
             print(f"warning: {name} failed, keeping previous content ({e})", file=sys.stderr)
+
+    prev = re.search(r"<!-- dash:kpis:start -->(.*?)<!-- dash:kpis:end -->", page, re.S)
+    try:
+        page = replace_block(page, "kpis", render_kpis(prev.group(1) if prev else ""))
+    except Exception as e:
+        print(f"warning: kpis failed, keeping previous content ({e})", file=sys.stderr)
 
     if page != original:
         today = dt.date.today()

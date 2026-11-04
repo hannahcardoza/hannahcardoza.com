@@ -10,7 +10,7 @@ docs/                       Site root, served by GitHub Pages
 ├── about/index.html        About
 ├── experience/index.html   Experience, education, skills
 ├── web-log/index.html      Web Log
-├── web-log/now-playing/    Auto-updated dashboard (Letterboxd, Goodreads, Spotify, Pinterest)
+├── web-log/now-playing/    Auto-updated dashboard (Letterboxd, Goodreads, Spotify, Strava, Pinterest)
 ├── 404.html                Not found page
 ├── assets/
 │   ├── styles.css          Compiled Tailwind CSS from the original design (don't hand-edit)
@@ -44,12 +44,14 @@ To see the welcome popup again, clear the site's data in your browser (it's reme
 
 ## Web Log dashboard
 
-The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls data from Letterboxd (RSS), Goodreads (public bookshelf widgets), Spotify (Web API), and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/now-playing/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
+The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls data from Letterboxd (RSS), Goodreads (public bookshelf widgets), Spotify (Web API), Strava (API), and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/now-playing/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
 
+- Layout: headline tiles (`dash:kpis`) above a grid of panels, one per source. Each panel's title bar is static HTML in the page; the script fills each panel body.
 - Run it locally: `python3 scripts/update_dashboard.py`
 - Run it on GitHub: Actions tab, "Update dashboard", "Run workflow"
 - Usernames are set at the top of the script
 - Spotify needs three GitHub secrets (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN`). `python3 scripts/spotify_auth.py` sets them up and also writes a gitignored `.env` for local runs.
+- Strava works the same way: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REFRESH_TOKEN`, set up by `python3 scripts/strava_auth.py`. Only totals and the latest activity's stats are shown, never maps, locations, titles, or times of day.
 - Goodreads doesn't share read dates, so `scripts/goodreads_finished.json` records the month each book first appears on the Read shelf. Edit it to correct a month (`null` means date unknown).
 - GitHub pauses scheduled jobs after 60 days without repo activity. If the dashboard stops updating, re-enable the workflow in the Actions tab.
 
