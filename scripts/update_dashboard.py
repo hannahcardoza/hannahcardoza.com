@@ -161,7 +161,7 @@ def render_goodreads():
         tag = ""
         if done:
             when = months.get(b["title"])
-            tag = f'<span class="dash-done">✓ Completed{" · " + esc(when) if when else ""}</span>'
+            tag = f'<span class="dash-done">✓ {esc(when)}</span>' if when else '<span class="dash-done">✓</span>'
         return f'<li>{img}<span class="dash-cap">{esc(b["title"])}</span>{by}{rating}{tag}</li>'
 
     out = '<h3 class="dash-h">&gt; Reading <span class="dash-src">via Goodreads</span></h3>'
