@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""Refresh the pinned "now_playing.log" dashboard on the Web Log page.
+"""Refresh the "now_playing.log" dashboard page (/web-log/now-playing/).
 
-Pulls public data from Letterboxd (RSS), Chess.com (public API), and
-Pinterest (RSS), renders static HTML, and writes it between marker
-comments in docs/web-log/index.html. Each source has its own markers;
-if a source fails, its previous content is kept.
+Pulls public data from Letterboxd (RSS) and Pinterest (RSS), renders
+static HTML, and writes it between marker comments in
+docs/web-log/now-playing/index.html. Each source has its own markers.
+If a source fails, its previous content is kept.
 
 The "updated" date only changes when the data itself changed, so the
 daily job doesn't create a commit when nothing is new.
 
-Usage: python3 scripts/update_dashboard.py [path/to/web-log/index.html]
+Usage: python3 scripts/update_dashboard.py [path/to/page.html]
 """
 
 import datetime as dt
 import html
-import json
 import re
 import sys
 import urllib.request
@@ -23,12 +22,11 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 LETTERBOXD_USER = "iloveh0tdads"
-CHESS_USER = "iloveh0tdads"
 PINTEREST_USER = "hannahmontanaxoxo"
 
 UA = "hannahcardoza.com dashboard (+https://hannahcardoza.com)"
 IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com"}
-DEFAULT_PAGE = Path(__file__).resolve().parent.parent / "docs" / "web-log" / "index.html"
+DEFAULT_PAGE = Path(__file__).resolve().parent.parent / "docs" / "web-log" / "now-playing" / "index.html"
 
 
 def fetch(url):
@@ -93,22 +91,6 @@ def render_letterboxd():
             '<ul class="dash-films">' + "".join(cards) + "</ul>")
 
 
-def render_chess():
-    s = json.loads(fetch(f"https://api.chess.com/pub/player/{CHESS_USER}/stats"))
-    tiles = []
-    for key, label in (("chess_rapid", "Rapid"), ("chess_blitz", "Blitz"), ("chess_bullet", "Bullet")):
-        rating = s.get(key, {}).get("last", {}).get("rating")
-        if rating:
-            tiles.append((label, rating))
-    puzzles = s.get("tactics", {}).get("highest", {}).get("rating")
-    if puzzles:
-        tiles.append(("Puzzles (best)", puzzles))
-    if not tiles:
-        raise ValueError("no chess ratings")
-    return ('<h3 class="dash-h">&gt; Playing chess</h3><ul class="dash-stats">'
-            + "".join(f'<li><span class="dash-num">{int(v)}</span><span class="dash-label">{esc(k)}</span></li>' for k, v in tiles)
-            + "</ul>")
-
 
 def render_pinterest():
     root = ET.fromstring(fetch(f"https://www.pinterest.com/{PINTEREST_USER}/feed.rss"))
@@ -126,7 +108,7 @@ def render_pinterest():
             + "</ul>")
 
 
-SOURCES = [("letterboxd", render_letterboxd), ("chess", render_chess), ("pinterest", render_pinterest)]
+SOURCES = [("letterboxd", render_letterboxd), ("pinterest", render_pinterest)]
 
 
 def replace_block(page, name, content):
