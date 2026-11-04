@@ -30,7 +30,7 @@
   d.innerHTML =
     '<div class="bar"><span id="welcome-title">welcome.exe</span>' +
     '<button type="button" data-close aria-label="Close">×</button></div>' +
-    '<div class="body"><p>Welcome to the new website.</p>' +
+    '<div class="body"><p>Welcome to the new website!</p>' +
     '<button type="button" class="ok" data-close autofocus>OK</button></div>';
   document.body.appendChild(d);
   d.addEventListener('click', function (e) {
