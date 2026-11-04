@@ -94,11 +94,12 @@ def render_letterboxd():
 
 
 def render_goodreads():
-    """Books in the "Currently Reading" box on the public profile page.
+    """One Reading row: books currently being read, then books finished this year.
 
-    Goodreads has no public feed for this profile, so this reads the profile
-    HTML. If Goodreads changes the page, this raises and the previous content
-    is kept until the parser is updated.
+    Goodreads has no public feed for this profile, so this reads the public
+    profile page (currently reading) and the public "Year in Books" page
+    (finished this year). If Goodreads changes those pages, this raises and
+    the previous content is kept until the parser is updated.
     """
     page = fetch(GOODREADS_PROFILE).decode("utf-8", "replace")
     start = page.find("is Currently Reading</a>")
@@ -112,27 +113,30 @@ def render_goodreads():
                for a in re.findall(r'<a class="authorName"[^>]*>(?:<span[^>]*>)?([^<]+)', seg)]
     covers = [safe_image(re.sub(r"\._SX\d+_", "._SX318_", c))
               for c in re.findall(r'<img[^>]+src="(https://i\.gr-assets\.com/[^"]+)"', seg)]
-    if not titles:
-        raise ValueError("no books in currently reading section")
+    books = [(clean_title(t), authors[i] if i < len(authors) else "", covers[i] if i < len(covers) else None, False)
+             for i, t in enumerate(titles[:4])]
+    try:
+        books += [(t, a, c, True) for t, a, c in year_in_books()]
+    except Exception as e:  # the currently-reading part still renders
+        print(f"warning: year in books failed ({e})", file=sys.stderr)
+    if not books:
+        raise ValueError("no books found")
     cards = []
-    for i, title in enumerate(titles[:4]):
-        title = re.sub(r"\s*\([^)]*#[^)]*\)$", "", title)  # drop "(Series, #6)"
-        author = authors[i] if i < len(authors) else ""
-        cover = covers[i] if i < len(covers) else None
+    for title, author, cover, done in books[:8]:
         img = (f'<img src="{esc(cover)}" alt="Cover of {esc(title)}" loading="lazy" width="150" height="225"/>'
                if cover else '<div class="dash-noposter"></div>')
         by = f'<span class="dash-by">{esc(author)}</span>' if author else ""
-        cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span>{by}</li>')
-    out = '<h3 class="dash-h">&gt; Reading</h3><ul class="dash-films">' + "".join(cards) + "</ul>"
-    try:
-        out += render_year_in_books()
-    except Exception as e:  # the currently-reading part still renders
-        print(f"warning: year in books failed ({e})", file=sys.stderr)
-    return out
+        tag = '<span class="dash-done">✓ Completed</span>' if done else ""
+        cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span>{by}{tag}</li>')
+    return '<h3 class="dash-h">&gt; Reading</h3><ul class="dash-films">' + "".join(cards) + "</ul>"
 
 
-def render_year_in_books():
-    """Books read this year, from the public "Year in Books" page."""
+def clean_title(title):
+    return re.sub(r"\s*\([^)]*#[^)]*\)$", "", title).strip()  # drop "(Series, #6)"
+
+
+def year_in_books():
+    """(title, author, cover) for books read this year, from the public Year in Books page."""
     year = dt.date.today().year
     user_id = re.search(r"/user/show/(\d+)", GOODREADS_PROFILE).group(1)
     page = fetch(f"https://www.goodreads.com/user/year_in_books/{year}/{user_id}").decode("utf-8", "replace")
@@ -147,17 +151,8 @@ def render_year_in_books():
             continue
         seen.add(label)
         title, _, author = label.rpartition(" by ")
-        books.append((re.sub(r"\s*\([^)]*#[^)]*\)$", "", title).strip(), author.strip(), safe_image(src.group(1))))
-    if not books:
-        return ""
-    cards = []
-    for title, author, cover in books[:8]:
-        img = (f'<img src="{esc(cover)}" alt="Cover of {esc(title)}" loading="lazy" width="150" height="225"/>'
-               if cover else '<div class="dash-noposter"></div>')
-        cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span><span class="dash-by">{esc(author)}</span></li>')
-    n = len(books)
-    return (f'<p class="dash-sub">Read in {year}: {n} book{"s" if n != 1 else ""}</p>'
-            '<ul class="dash-films">' + "".join(cards) + "</ul>")
+        books.append((clean_title(title), author.strip(), safe_image(src.group(1))))
+    return books
 
 
 def render_pinterest():
