@@ -123,7 +123,40 @@ def render_goodreads():
                if cover else '<div class="dash-noposter"></div>')
         by = f'<span class="dash-by">{esc(author)}</span>' if author else ""
         cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span>{by}</li>')
-    return ('<h3 class="dash-h">&gt; Reading</h3>'
+    out = '<h3 class="dash-h">&gt; Reading</h3><ul class="dash-films">' + "".join(cards) + "</ul>"
+    try:
+        out += render_year_in_books()
+    except Exception as e:  # the currently-reading part still renders
+        print(f"warning: year in books failed ({e})", file=sys.stderr)
+    return out
+
+
+def render_year_in_books():
+    """Books read this year, from the public "Year in Books" page."""
+    year = dt.date.today().year
+    user_id = re.search(r"/user/show/(\d+)", GOODREADS_PROFILE).group(1)
+    page = fetch(f"https://www.goodreads.com/user/year_in_books/{year}/{user_id}").decode("utf-8", "replace")
+    books, seen = [], set()
+    for tag in re.findall(r"<img[^>]+>", page):
+        src = re.search(r'src="(https://i\.gr-assets\.com/[^"]+/books/[^"]+)"', tag)
+        alt = re.search(r'alt="([^"]+ by [^"]+)"', tag)
+        if not (src and alt):
+            continue
+        label = html.unescape(alt.group(1))
+        if label in seen:
+            continue
+        seen.add(label)
+        title, _, author = label.rpartition(" by ")
+        books.append((re.sub(r"\s*\([^)]*#[^)]*\)$", "", title).strip(), author.strip(), safe_image(src.group(1))))
+    if not books:
+        return ""
+    cards = []
+    for title, author, cover in books[:8]:
+        img = (f'<img src="{esc(cover)}" alt="Cover of {esc(title)}" loading="lazy" width="150" height="225"/>'
+               if cover else '<div class="dash-noposter"></div>')
+        cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span><span class="dash-by">{esc(author)}</span></li>')
+    n = len(books)
+    return (f'<p class="dash-sub">Read in {year}: {n} book{"s" if n != 1 else ""}</p>'
             '<ul class="dash-films">' + "".join(cards) + "</ul>")
 
 
