@@ -9,7 +9,7 @@ docs/                       Site root, served by GitHub Pages
 ├── index.html              Home
 ├── about/index.html        About
 ├── experience/index.html   Experience, education, skills
-├── blog/index.html         Web log
+├── blog/index.html         Web Log
 ├── 404.html                Not found page
 ├── assets/
 │   ├── styles.css          Compiled Tailwind CSS from the original design (don't hand-edit)
