@@ -57,3 +57,15 @@
 .dash-sub{margin:1rem 0 0;font-family:VT323,Courier New,monospace;font-size:1.05rem;line-height:1;text-transform:uppercase;letter-spacing:.1em;padding-bottom:.35rem;border-bottom:1px dashed var(--border)}
 .dash-sub-now{color:var(--fuchsia)}
 .dash-sub-done{margin-top:1.5rem;color:oklch(80% .2 145)}
+.dash-sub-spot{color:var(--tangerine)}
+.dash-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 1.5rem}
+.dash-tracks{display:grid;gap:.55rem;margin:.6rem 0 0;padding:0;list-style:none}
+.dash-tracks li{display:flex;align-items:center;gap:.65rem;min-width:0}
+.dash-tracks img,.dash-tracks .dash-noart{flex-shrink:0;width:44px;height:44px;object-fit:cover;border:1px solid var(--border);background:var(--background)}
+.dash-track{min-width:0;font-size:.95rem;line-height:1.25;overflow:hidden;text-overflow:ellipsis}
+.dash-artist{display:block;font-size:.85rem;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-lists{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.75rem;margin:.6rem 0 0;padding:0;list-style:none}
+.dash-lists a{color:inherit;text-decoration:none}
+.dash-lists img,.dash-lists .dash-noart{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:cover;border:1px solid var(--border);background:var(--background)}
+.dash-lists a:hover .dash-cap{text-decoration:underline}
+@media (max-width:639px){.dash-cols{grid-template-columns:1fr}.dash-lists{grid-template-columns:repeat(3,minmax(0,1fr))}}

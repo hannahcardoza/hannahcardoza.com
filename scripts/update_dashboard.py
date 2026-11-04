@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Refresh the "now_playing.log" dashboard page (/web-log/now-playing/).
 
-Pulls public data from Letterboxd (RSS), Goodreads (public bookshelf
-widgets), and Pinterest (RSS), renders static HTML, and writes it between marker comments in
+Pulls data from Letterboxd (RSS), Goodreads (public bookshelf widgets),
+Spotify (Web API, needs SPOTIFY_* secrets), and Pinterest (RSS), renders static HTML, and writes it between marker comments in
 docs/web-log/now-playing/index.html. Each source has its own markers.
 If a source fails, its previous content is kept.
 
@@ -14,9 +14,12 @@ Usage: python3 scripts/update_dashboard.py [path/to/page.html]
 
 import datetime as dt
 import html
+import base64
 import json
+import os
 import re
 import sys
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -31,12 +34,13 @@ GOODREADS_USER_ID = "181465183"
 FINISHED_FILE = Path(__file__).resolve().parent / "goodreads_finished.json"
 
 UA = "hannahcardoza.com dashboard (+https://hannahcardoza.com)"
-IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com", "i.gr-assets.com"}
+IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com", "i.gr-assets.com",
+               "i.scdn.co", "mosaic.scdn.co", "image-cdn-ak.spotifycdn.com", "image-cdn-fa.spotifycdn.com"}
 DEFAULT_PAGE = Path(__file__).resolve().parent.parent / "docs" / "web-log" / "now-playing" / "index.html"
 
 
-def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+def fetch(url, headers=None, data=None):
+    req = urllib.request.Request(url, data=data, headers={"User-Agent": UA, **(headers or {})})
     with urllib.request.urlopen(req, timeout=20) as r:
         return r.read()
 
@@ -216,6 +220,89 @@ def render_goodreads():
     return out
 
 
+def env(name):
+    """Read a setting from the environment, or from a local .env file (gitignored)."""
+    if os.environ.get(name):
+        return os.environ[name]
+    path = Path(__file__).resolve().parent.parent / ".env"
+    if path.exists():
+        for line in path.read_text().splitlines():
+            k, _, v = line.partition("=")
+            if k.strip() == name:
+                return v.strip()
+    return None
+
+
+def spotify_get(path, token):
+    return json.loads(fetch(f"https://api.spotify.com/v1/{path}", headers={"Authorization": f"Bearer {token}"}))
+
+
+def spotify_token():
+    cid, secret, refresh = env("SPOTIFY_CLIENT_ID"), env("SPOTIFY_CLIENT_SECRET"), env("SPOTIFY_REFRESH_TOKEN")
+    if not (cid and secret and refresh):
+        raise ValueError("Spotify credentials not set")
+    auth = base64.b64encode(f"{cid}:{secret}".encode()).decode()
+    body = urllib.parse.urlencode({"grant_type": "refresh_token", "refresh_token": refresh}).encode()
+    resp = fetch("https://accounts.spotify.com/api/token", data=body,
+                 headers={"Authorization": f"Basic {auth}", "Content-Type": "application/x-www-form-urlencoded"})
+    return json.loads(resp)["access_token"]
+
+
+def smallest_image(images, min_px=64):
+    """Pick the smallest image at least min_px wide (Spotify lists several sizes)."""
+    imgs = sorted((i for i in images or [] if i.get("url")), key=lambda i: i.get("width") or 9999)
+    for i in imgs:
+        if (i.get("width") or 9999) >= min_px:
+            return safe_image(i["url"])
+    return safe_image(imgs[-1]["url"]) if imgs else None
+
+
+def track_row(track):
+    art = smallest_image(track.get("album", {}).get("images"))
+    artists = ", ".join(a["name"] for a in track.get("artists", []))
+    img = f'<img src="{esc(art)}" alt="" loading="lazy" width="44" height="44"/>' if art else '<span class="dash-noart"></span>'
+    return (f'<li>{img}<span class="dash-track">{esc(track.get("name"))}'
+            f'<span class="dash-artist">{esc(artists)}</span></span></li>')
+
+
+def render_spotify():
+    token = spotify_token()
+    me = spotify_get("me", token)
+
+    recent, seen = [], set()
+    for item in spotify_get("me/player/recently-played?limit=30", token).get("items", []):
+        tr = item.get("track") or {}
+        if tr.get("id") and tr["id"] not in seen:
+            seen.add(tr["id"])
+            recent.append(tr)
+        if len(recent) == 5:
+            break
+    top = spotify_get("me/top/tracks?time_range=short_term&limit=5", token).get("items", [])
+    playlists = [pl for pl in spotify_get("me/playlists?limit=50", token).get("items", [])
+                 if pl and pl.get("public") and (pl.get("owner") or {}).get("id") == me.get("id")][:6]
+    if not (recent or top or playlists):
+        raise ValueError("no Spotify data")
+
+    out = '<h3 class="dash-h">&gt; Listening <span class="dash-src">via Spotify</span></h3><div class="dash-cols">'
+    if recent:
+        out += '<div><p class="dash-sub dash-sub-spot">Recently played</p><ul class="dash-tracks">' + "".join(track_row(t) for t in recent) + "</ul></div>"
+    if top:
+        out += '<div><p class="dash-sub dash-sub-spot">On repeat this month</p><ul class="dash-tracks">' + "".join(track_row(t) for t in top) + "</ul></div>"
+    out += "</div>"
+    if playlists:
+        cards = []
+        for pl in playlists:
+            cover = smallest_image(pl.get("images"), min_px=200)
+            link = (pl.get("external_urls") or {}).get("spotify", "")
+            if not link.startswith("https://open.spotify.com/"):
+                link = ""
+            img = f'<img src="{esc(cover)}" alt="" loading="lazy"/>' if cover else '<span class="dash-noart"></span>'
+            inner = f'{img}<span class="dash-cap">{esc(pl.get("name"))}</span>'
+            cards.append(f'<li><a href="{esc(link)}" target="_blank" rel="noopener">{inner}</a></li>' if link else f"<li>{inner}</li>")
+        out += '<p class="dash-sub dash-sub-spot">Playlists</p><ul class="dash-lists">' + "".join(cards) + "</ul>"
+    return out
+
+
 def render_pinterest():
     root = ET.fromstring(fetch(f"https://www.pinterest.com/{PINTEREST_USER}/feed.rss"))
     pins = []
@@ -232,7 +319,7 @@ def render_pinterest():
             + "</ul>")
 
 
-SOURCES = [("letterboxd", render_letterboxd), ("goodreads", render_goodreads), ("pinterest", render_pinterest)]
+SOURCES = [("letterboxd", render_letterboxd), ("goodreads", render_goodreads), ("spotify", render_spotify), ("pinterest", render_pinterest)]
 
 
 def replace_block(page, name, content):

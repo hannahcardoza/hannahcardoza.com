@@ -15,6 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Refresh dashboard data
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
         run: python3 scripts/update_dashboard.py
       - name: Check site
         run: python3 scripts/check_site.py docs
