@@ -55,5 +55,5 @@
 .dash-now{--c:var(--aqua)}
 .dash-src{margin-left:.35rem;font-size:.95rem;letter-spacing:.08em;color:var(--muted-foreground,#a8a29e);text-transform:none}
 .dash-sub{margin:1rem 0 0;font-family:VT323,Courier New,monospace;font-size:1.05rem;line-height:1;text-transform:uppercase;letter-spacing:.1em;padding-bottom:.35rem;border-bottom:1px dashed var(--border)}
-.dash-sub-now{color:var(--aqua)}
+.dash-sub-now{color:var(--fuchsia)}
 .dash-sub-done{margin-top:1.5rem;color:oklch(80% .2 145)}

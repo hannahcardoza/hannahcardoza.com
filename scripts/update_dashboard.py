@@ -146,8 +146,9 @@ def finished_months(read_books):
 
 def render_goodreads():
     """One Reading row: currently reading, then the most recently read books."""
-    current = goodreads_shelf("currently-reading", 2)
-    read = goodreads_shelf("read", 3)
+    # The widget lists books oldest first, so reverse for newest first.
+    current = goodreads_shelf("currently-reading", 2)[::-1]
+    read = goodreads_shelf("read", 3)[::-1]
     if not current and not read:
         raise ValueError("no books on either shelf")
     months = finished_months(read)
