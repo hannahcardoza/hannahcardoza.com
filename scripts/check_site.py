@@ -9,6 +9,7 @@ Usage: python3 scripts/check_site.py [site_root]
 Exits with status 1 if any problem is found.
 """
 
+import hashlib
 import re
 import sys
 from html.parser import HTMLParser
@@ -144,6 +145,12 @@ def main():
         for line, ref in p.refs:
             if ref.startswith(("mailto:", "tel:")):
                 continue
+            m = re.match(r"(/assets/[^?]+\.(?:css|js))(?:\?v=([0-9a-f]+))?$", ref)
+            if m:
+                want = hashlib.sha256((root / m.group(1).lstrip("/")).read_bytes()).hexdigest()[:8] \
+                    if (root / m.group(1).lstrip("/")).is_file() else None
+                if want and m.group(2) != want:
+                    issues.append(f"line {line}: {m.group(1)} version tag is out of date (run scripts/version_assets.py)")
             target = resolve(root, page, ref)
             if target is not None and not target.is_file():
                 issues.append(f"line {line}: broken link {ref}")
