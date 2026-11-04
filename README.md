@@ -37,6 +37,7 @@ To see the welcome popup again, clear the site's data in your browser (it's reme
 ## Editing
 
 - Each page is a standalone HTML file. The header, ticker, nav, footer, and contact popup are repeated in every page, so update all five files when changing them.
+- After editing anything in `docs/assets/`, run `python3 scripts/version_assets.py`. It updates the `?v=` tags on stylesheet and script links so visitors get the new files right away instead of a cached copy (GitHub Pages caches for 10 minutes). The site check fails if a tag is stale.
 - `styles.css` is precompiled Tailwind, so only utility classes already used on the site are available. Put new styles in `site.css`.
 - Experience tag colours are defined in `site.css` (`.t-software`, `.t-hardware`, and so on). A new tag needs a class there and, if it starts a new colour group, an entry in the legend.
 - After changing the home page, regenerate `assets/og.png` (a 1920×1080 screenshot, taken after the welcome popup has been dismissed) so link previews stay current.
