@@ -454,7 +454,7 @@ def render_pinterest():
         img = first_img(it.findtext("description"))
         if img:
             pins.append((img, (it.findtext("title") or "").strip() or "Pinterest pin"))
-        if len(pins) == 6:
+        if len(pins) == 15:
             break
     if not pins:
         raise ValueError("no pins in feed")
