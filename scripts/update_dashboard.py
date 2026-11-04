@@ -25,9 +25,9 @@ from urllib.parse import urlsplit
 LETTERBOXD_USER = "iloveh0tdads"
 PINTEREST_USER = "hannahmontanaxoxo"
 GOODREADS_USER_ID = "181465183"
-# Month each book was completed. Goodreads doesn't share read dates publicly,
-# so the first time a book shows up on the Read shelf, this script records the
-# current month here. A null value means "completed, date unknown".
+# Month each book was completed, saved so it persists. Filled from the date the
+# book was rated (public updates widget), or else the month it first appeared
+# on the Read shelf. Edit the file to correct a month.
 FINISHED_FILE = Path(__file__).resolve().parent / "goodreads_finished.json"
 
 UA = "hannahcardoza.com dashboard (+https://hannahcardoza.com)"
@@ -130,16 +130,51 @@ def clean_title(title):
     return re.sub(r"\s*\([^)]*#[^)]*\)$", "", title).strip()  # drop "(Series, #6)"
 
 
+def rated_dates():
+    """{title: date} for books rated recently, from the public updates widget.
+
+    The widget shows recent activity as a date header followed by an update,
+    e.g. "October 10" then "rated a book: The Only One Left". It has no year,
+    so a date later than today is taken to be from last year.
+    """
+    page = fetch(f"https://www.goodreads.com/widgets/user_update_widget?num_updates=50&user={GOODREADS_USER_ID}").decode("utf-8", "replace")
+    today = dt.date.today()
+    dates, current = {}, None
+    for blk in re.split(r'<div class="update[^"]*"', page)[1:]:
+        parts = [p.strip().lstrip(">").strip() for p in html.unescape(re.sub(r"<[^>]+>", "|", blk)).split("|")]
+        parts = [p for p in parts if p]
+        if len(parts) == 1:
+            try:
+                d = dt.datetime.strptime(f"{parts[0]} {today.year}", "%B %d %Y").date()
+            except ValueError:
+                continue
+            current = d.replace(year=today.year - 1) if d > today else d
+        elif current and "rated a book" in parts and "by" in parts:
+            title = clean_title(parts[parts.index("by") - 1])
+            dates.setdefault(title, current)
+    return dates
+
+
 def finished_months(read_books):
-    """Load the completed-month record, adding this month for newly read books."""
+    """Completed month per book, saved in FINISHED_FILE so it outlives the widget.
+
+    Uses the date the book was rated when the updates widget has it.
+    Otherwise falls back to the month the book first appeared on the Read shelf.
+    """
     data = json.loads(FINISHED_FILE.read_text(encoding="utf-8")) if FINISHED_FILE.exists() else {}
-    changed = False
-    this_month = dt.date.today().strftime("%B %Y")
+    try:
+        rated = rated_dates()
+    except Exception as e:
+        print(f"warning: updates widget failed ({e})", file=sys.stderr)
+        rated = {}
+    before = dict(data)
     for b in read_books:
-        if b["title"] not in data:
-            data[b["title"]] = this_month
-            changed = True
-    if changed:
+        title = b["title"]
+        if title in rated and not data.get(title):
+            data[title] = rated[title].strftime("%B %Y")
+        elif title not in data:
+            data[title] = dt.date.today().strftime("%B %Y")
+    if data != before:
         FINISHED_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return data
 
@@ -152,6 +187,13 @@ def render_goodreads():
     if not current and not read:
         raise ValueError("no books on either shelf")
     months = finished_months(read)
+
+    def completed_key(b):  # newest completion first, undated books last
+        try:
+            return dt.datetime.strptime(months.get(b["title"]) or "", "%B %Y")
+        except ValueError:
+            return dt.datetime.min
+    read = sorted(read, key=completed_key, reverse=True)
 
     def card(b, done):
         img = (f'<img src="{esc(b["cover"])}" alt="Cover of {esc(b["title"])}" loading="lazy" width="150" height="225"/>'
