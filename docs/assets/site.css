@@ -16,3 +16,5 @@
 .hero-pc-wrap{flex-shrink:0;margin-right:calc(17.5% - 112px)}
 @media (max-width:639px){.hero-pc{display:block;zoom:.38}.hero-pc-wrap{margin-right:calc(17.5% - 42.56px)}}
 @media (max-width:374px){.hero-pc{zoom:.28}.hero-pc-wrap{margin-right:calc(17.5% - 31.36px)}}
+.tags{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0 0;padding:0;list-style:none}
+.tags li{font-family:VT323,Courier New,monospace;font-size:1rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;padding:.2rem .5rem;border:1px solid var(--cream);color:var(--cream)}
