@@ -2,7 +2,8 @@
 """Refresh the "now_playing.log" dashboard page (/web-log/now-playing/).
 
 Pulls data from Letterboxd (RSS), Goodreads (public bookshelf widgets),
-Spotify (Web API, needs SPOTIFY_* secrets), and Pinterest (RSS), renders static HTML, and writes it between marker comments in
+Spotify (Web API, needs SPOTIFY_* secrets), Strava (API, needs STRAVA_*
+secrets), and Pinterest (RSS), renders static HTML, and writes it between marker comments in
 docs/web-log/now-playing/index.html. Each source has its own markers.
 If a source fails, its previous content is kept.
 
@@ -303,6 +304,41 @@ def render_spotify():
     return out
 
 
+RUN_TYPES = {"Run", "TrailRun", "VirtualRun"}
+
+
+def render_strava():
+    """Year-to-date running totals. Totals only: no maps, routes, or times."""
+    cid, secret, refresh = env("STRAVA_CLIENT_ID"), env("STRAVA_CLIENT_SECRET"), env("STRAVA_REFRESH_TOKEN")
+    if not (cid and secret and refresh):
+        raise ValueError("Strava credentials not set")
+    body = urllib.parse.urlencode({"client_id": cid, "client_secret": secret,
+                                   "grant_type": "refresh_token", "refresh_token": refresh}).encode()
+    tok = json.loads(fetch("https://www.strava.com/oauth/token", data=body))
+    if tok.get("refresh_token") and tok["refresh_token"] != refresh:
+        print("warning: Strava issued a new refresh token. Rerun scripts/strava_auth.py "
+              "if the Running section stops updating.", file=sys.stderr)
+    year = dt.date.today().year
+    after = int(dt.datetime(year, 1, 1).timestamp())
+    acts, page = [], 1
+    while True:
+        batch = json.loads(fetch(f"https://www.strava.com/api/v3/athlete/activities?after={after}&per_page=200&page={page}",
+                                 headers={"Authorization": f"Bearer {tok['access_token']}"}))
+        acts += batch
+        if len(batch) < 200:
+            break
+        page += 1
+    runs = [a for a in acts if a.get("sport_type") in RUN_TYPES]
+    hikes = [a for a in acts if a.get("sport_type") == "Hike"]
+    km = sum(a.get("distance", 0) for a in runs) / 1000
+    longest = max((a.get("distance", 0) for a in runs), default=0) / 1000
+    tiles = [(f"{km:.1f}", f"km run in {year}"), (str(len(runs)), "runs"),
+             (f"{longest:.1f}", "km longest run"), (str(len(hikes)), "hikes")]
+    return ('<h3 class="dash-h">&gt; Running <span class="dash-src">via Strava</span></h3><ul class="dash-stats">'
+            + "".join(f'<li><span class="dash-num">{esc(v)}</span><span class="dash-label">{esc(k)}</span></li>' for v, k in tiles)
+            + "</ul>")
+
+
 def render_pinterest():
     root = ET.fromstring(fetch(f"https://www.pinterest.com/{PINTEREST_USER}/feed.rss"))
     pins = []
@@ -319,7 +355,7 @@ def render_pinterest():
             + "</ul>")
 
 
-SOURCES = [("letterboxd", render_letterboxd), ("goodreads", render_goodreads), ("spotify", render_spotify), ("pinterest", render_pinterest)]
+SOURCES = [("letterboxd", render_letterboxd), ("goodreads", render_goodreads), ("spotify", render_spotify), ("strava", render_strava), ("pinterest", render_pinterest)]
 
 
 def replace_block(page, name, content):
