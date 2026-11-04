@@ -15,7 +15,7 @@ docs/                       Site root, served by GitHub Pages
 ├── assets/
 │   ├── styles.css          Compiled Tailwind CSS from the original design (don't hand-edit)
 │   ├── site.css            Custom styles: ticker, popups, tags, legend, dashboard
-│   ├── site.js             Footer visitor counter and one-time welcome popup
+│   ├── site.js             Visitor counter, welcome popup, and sticky mini nav
 │   └── og.png              Link preview image (screenshot of the home page)
 ├── favicon.svg, favicon.ico, apple-touch-icon.png
 ├── robots.txt, sitemap.xml
