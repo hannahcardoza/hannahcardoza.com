@@ -92,7 +92,7 @@ def render_letterboxd():
         year = f' <span class="dash-year">{esc(f["year"])}</span>' if f["year"] else ""
         rating = f'<span class="dash-stars">{esc(f["rating"])}</span>' if f["rating"] else ""
         cards.append(f'<li>{img}<span class="dash-cap">{esc(f["title"])}{year}</span>{rating}</li>')
-    return ('<h3 class="dash-h">&gt; Watching</h3>'
+    return ('<h3 class="dash-h">&gt; Watching <span class="dash-src">via Letterboxd</span></h3>'
             '<ul class="dash-films">' + "".join(cards) + "</ul>")
 
 
@@ -136,7 +136,7 @@ def render_goodreads():
         else:
             tag = '<span class="dash-now">▶ Reading</span>'
         cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span>{by}{tag}</li>')
-    return '<h3 class="dash-h">&gt; Reading</h3><ul class="dash-films">' + "".join(cards) + "</ul>"
+    return '<h3 class="dash-h">&gt; Reading <span class="dash-src">via Goodreads</span></h3><ul class="dash-films">' + "".join(cards) + "</ul>"
 
 
 def clean_title(title):
@@ -174,7 +174,7 @@ def render_pinterest():
             break
     if not pins:
         raise ValueError("no pins in feed")
-    return ('<h3 class="dash-h">&gt; Pinning</h3><ul class="dash-pins">'
+    return ('<h3 class="dash-h">&gt; Pinning <span class="dash-src">via Pinterest</span></h3><ul class="dash-pins">'
             + "".join(f'<li><img src="{esc(src)}" alt="{esc(alt)}" loading="lazy"/></li>' for src, alt in pins)
             + "</ul>")
 

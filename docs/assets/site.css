@@ -53,3 +53,4 @@
 .dash-by{display:block;margin-top:.1rem;font-size:.85rem;opacity:.7}
 .dash-done,.dash-now{--c:oklch(80% .2 145);display:inline-block;margin-top:.35rem;padding:.15rem .4rem;font-family:VT323,Courier New,monospace;font-size:.95rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;color:var(--c);border:1px solid var(--c)}
 .dash-now{--c:var(--aqua)}
+.dash-src{margin-left:.35rem;font-size:.95rem;letter-spacing:.08em;color:var(--muted-foreground,#a8a29e);text-transform:none}
