@@ -24,7 +24,7 @@
 .t-mechanical,.t-manufacturing{--c:oklch(72% .07 50)}
 .t-consulting,.t-strategy,.t-finance{--c:var(--citric)}
 .t-healthcare{--c:var(--aqua)}
-.t-teaching{--c:var(--cream)}
+.t-community{--c:var(--cream)}
 .legend{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem 1rem;margin:0 0 1.25rem;padding:0 0 .9rem;list-style:none;border-bottom:1px dashed var(--border);font-family:VT323,Courier New,monospace;font-size:1rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-foreground,#a8a29e)}
 .legend li{display:flex;align-items:center;gap:.4rem}
 :where(.legend .sw){--c:var(--cream);width:.8rem;height:.8rem}
