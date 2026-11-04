@@ -44,11 +44,12 @@ To see the welcome popup again, clear the site's data in your browser (it's reme
 
 ## Web Log dashboard
 
-The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls public data from Letterboxd (RSS), Goodreads (public profile page), and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/now-playing/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
+The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls public data from Letterboxd (RSS), Goodreads (public bookshelf widgets), and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/now-playing/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
 
 - Run it locally: `python3 scripts/update_dashboard.py`
 - Run it on GitHub: Actions tab, "Update dashboard", "Run workflow"
 - Usernames are set at the top of the script
+- Goodreads doesn't share read dates, so `scripts/goodreads_finished.json` records the month each book first appears on the Read shelf. Edit it to correct a month (`null` means date unknown).
 - GitHub pauses scheduled jobs after 60 days without repo activity. If the dashboard stops updating, re-enable the workflow in the Actions tab.
 
 ## Checks
