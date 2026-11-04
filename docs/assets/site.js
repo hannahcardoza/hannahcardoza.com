@@ -29,7 +29,7 @@
   d.setAttribute('aria-labelledby', 'welcome-title');
   d.innerHTML =
     '<div class="bar"><span id="welcome-title">welcome.exe</span></div>' +
-    '<div class="body"><p>Welcome to my new website!</p>' +
+    '<div class="body"><p>Welcome to the new site!</p>' +
     '<button type="button" class="ok" data-close autofocus>OK</button></div>';
   document.body.appendChild(d);
   d.addEventListener('click', function (e) {
