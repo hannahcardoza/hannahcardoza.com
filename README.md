@@ -41,13 +41,21 @@ To see the welcome popup again, clear the site's data in your browser (it's reme
 - After changing the home page, regenerate `assets/og.png` (a 1920×1080 screenshot, taken after the welcome popup has been dismissed) so link previews stay current.
 - Add new pages to `sitemap.xml`.
 
+## Checks
+
+`scripts/check_site.py` checks internal links and assets, HTML tag balance, duplicate ids, required head tags, and that `sitemap.xml` matches the pages. It runs automatically on every push to `master` and every pull request (`.github/workflows/check-site.yml`). External links aren't checked. To run it locally:
+
+```sh
+python3 scripts/check_site.py docs
+```
+
 ## Analytics
 
 Page views are tracked with [GoatCounter](https://hannahcardoza.goatcounter.com) (no cookies). The footer visitor number comes from GoatCounter's public counter, which needs "Allow adding visitor counts on your website" turned on in GoatCounter settings. Visits from localhost aren't counted.
 
 ## Deploy
 
-Pushing to `master` publishes the site. GitHub Pages serves the `docs/` folder (Settings → Pages → Deploy from branch → `master` / `docs`). Enable **Enforce HTTPS** in the same settings page.
+Pushing to `master` publishes the site. GitHub Pages serves the `docs/` folder (Settings → Pages → Deploy from branch → `master` / `docs`). **Enforce HTTPS** is turned on in the same settings page.
 
 ## License
 
