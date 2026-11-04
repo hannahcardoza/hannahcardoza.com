@@ -13,5 +13,6 @@
 .contact-pop dl{margin:0;padding:1rem 1.1rem 1.2rem;display:grid;gap:.75rem}
 .contact-pop dt{font-family:VT323,Courier New,monospace;font-size:1.15rem;text-transform:uppercase;letter-spacing:.1em;opacity:.7}
 .contact-pop dd{margin:0;font-size:1.05rem;overflow-wrap:anywhere}
-@media (max-width:639px){.hero-pc{display:block;zoom:.38}}
-@media (max-width:359px){.hero-pc{zoom:.28}}
+.hero-pc-wrap{flex-shrink:0;margin-right:calc(17.5% - 112px)}
+@media (max-width:639px){.hero-pc{display:block;zoom:.38}.hero-pc-wrap{margin-right:calc(17.5% - 42.56px)}}
+@media (max-width:374px){.hero-pc{zoom:.28}.hero-pc-wrap{margin-right:calc(17.5% - 31.36px)}}
