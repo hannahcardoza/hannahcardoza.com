@@ -24,6 +24,10 @@ from urllib.parse import urlsplit
 LETTERBOXD_USER = "iloveh0tdads"
 PINTEREST_USER = "hannahmontanaxoxo"
 GOODREADS_PROFILE = "https://www.goodreads.com/user/show/181465183-hannah-cardoza"
+# Goodreads keeps finish dates behind sign-in, so they are listed here by hand.
+# Title (as shown on the dashboard) -> short date. Books without an entry just say "Completed".
+FINISHED_DATES = {
+}
 
 UA = "hannahcardoza.com dashboard (+https://hannahcardoza.com)"
 IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com", "i.gr-assets.com"}
@@ -126,7 +130,11 @@ def render_goodreads():
         img = (f'<img src="{esc(cover)}" alt="Cover of {esc(title)}" loading="lazy" width="150" height="225"/>'
                if cover else '<div class="dash-noposter"></div>')
         by = f'<span class="dash-by">{esc(author)}</span>' if author else ""
-        tag = '<span class="dash-done">✓ Completed</span>' if done else ""
+        if done:
+            when = FINISHED_DATES.get(title)
+            tag = f'<span class="dash-done">✓ Completed{" · " + esc(when) if when else ""}</span>'
+        else:
+            tag = '<span class="dash-now">▶ Reading</span>'
         cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span>{by}{tag}</li>')
     return '<h3 class="dash-h">&gt; Reading</h3><ul class="dash-films">' + "".join(cards) + "</ul>"
 
