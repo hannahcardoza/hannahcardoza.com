@@ -22,5 +22,5 @@
 .tags .t-product{background:var(--fuchsia);color:var(--cream)}
 .tags .t-hardware{background:var(--tangerine);color:var(--cream)}
 .tags .t-mechanical,.tags .t-manufacturing{background:var(--tan);color:var(--background)}
-.tags .t-business,.tags .t-strategy,.tags .t-finance{background:var(--citric);color:var(--klein)}
+.tags .t-business,.tags .t-consulting,.tags .t-strategy,.tags .t-finance{background:var(--citric);color:var(--klein)}
 .tags .t-healthcare{background:var(--aqua);color:var(--background)}
