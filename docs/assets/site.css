@@ -111,3 +111,4 @@
 .panel-wide .dash-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
 .panel-wide .dash-lists{grid-template-columns:repeat(6,minmax(0,1fr))}
 @media (max-width:639px){.panel-wide .dash-cols{grid-template-columns:1fr}.panel-wide .dash-lists{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:639px){.panel .dash-films{grid-template-columns:repeat(3,minmax(0,1fr))}.panel-klein .dash-films li:nth-child(n+4){display:none}.panel .dash-cap,.panel .dash-by{font-size:.78rem}.panel .dash-done{font-size:.85rem;padding:.1rem .3rem}}
