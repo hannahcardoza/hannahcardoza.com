@@ -151,20 +151,26 @@ def render_goodreads():
     if not current and not read:
         raise ValueError("no books on either shelf")
     months = finished_months(read)
-    cards = []
-    for b, done in [(b, False) for b in current[:4]] + [(b, True) for b in read[:4]]:
+
+    def card(b, done):
         img = (f'<img src="{esc(b["cover"])}" alt="Cover of {esc(b["title"])}" loading="lazy" width="150" height="225"/>'
                if b["cover"] else '<div class="dash-noposter"></div>')
         by = f'<span class="dash-by">{esc(b["author"])}</span>' if b["author"] else ""
         rating = f'<span class="dash-stars">{"★" * b["stars"]}</span>' if done and b["stars"] else ""
+        tag = ""
         if done:
             when = months.get(b["title"])
             tag = f'<span class="dash-done">✓ Completed{" · " + esc(when) if when else ""}</span>'
-        else:
-            tag = '<span class="dash-now">▶ Reading</span>'
-        cards.append(f'<li>{img}<span class="dash-cap">{esc(b["title"])}</span>{by}{rating}{tag}</li>')
-    return ('<h3 class="dash-h">&gt; Reading <span class="dash-src">via Goodreads</span></h3>'
-            '<ul class="dash-films">' + "".join(cards) + "</ul>")
+        return f'<li>{img}<span class="dash-cap">{esc(b["title"])}</span>{by}{rating}{tag}</li>'
+
+    out = '<h3 class="dash-h">&gt; Reading <span class="dash-src">via Goodreads</span></h3>'
+    if current:
+        out += ('<p class="dash-sub dash-sub-now">Currently reading</p><ul class="dash-films">'
+                + "".join(card(b, False) for b in current[:4]) + "</ul>")
+    if read:
+        out += ('<p class="dash-sub dash-sub-done">Completed</p><ul class="dash-films">'
+                + "".join(card(b, True) for b in read[:4]) + "</ul>")
+    return out
 
 
 def render_pinterest():
