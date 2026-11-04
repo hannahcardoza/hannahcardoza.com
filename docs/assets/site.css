@@ -17,13 +17,15 @@
 @media (max-width:639px){.hero-pc{display:block;zoom:.38}.hero-pc-wrap{margin-right:calc(17.5% - 42.56px)}}
 @media (max-width:374px){.hero-pc{zoom:.28}.hero-pc-wrap{margin-right:calc(17.5% - 31.36px)}}
 .tags{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0 0;padding:0;list-style:none}
-:where(.tags li){font-family:VT323,Courier New,monospace;font-size:1rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;padding:.25rem .5rem;background:var(--cream);color:var(--background)}
-.t-software{background:var(--klein);color:var(--cream)}
-.t-product{background:var(--fuchsia);color:var(--cream)}
-.t-hardware{background:var(--tangerine);color:var(--cream)}
-.t-mechanical,.t-manufacturing{background:var(--tan);color:var(--background)}
-.t-business,.t-consulting,.t-strategy,.t-finance{background:var(--citric);color:var(--klein)}
-.t-healthcare{background:var(--aqua);color:var(--background)}
+:where(.tags li){--c:var(--cream);font-family:VT323,Courier New,monospace;font-size:1rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;padding:.2rem .5rem;border:1px solid var(--c);color:var(--c)}
+.t-software{--c:oklch(68% .19 268)}
+.t-product{--c:var(--fuchsia)}
+.t-hardware{--c:var(--tangerine)}
+.t-mechanical,.t-manufacturing{--c:oklch(72% .07 50)}
+.t-consulting,.t-strategy,.t-finance{--c:var(--citric)}
+.t-healthcare{--c:var(--aqua)}
+.t-teaching{--c:var(--cream)}
 .legend{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem 1rem;margin:0 0 1.25rem;padding:0 0 .9rem;list-style:none;border-bottom:1px dashed var(--border);font-family:VT323,Courier New,monospace;font-size:1rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted-foreground,#a8a29e)}
 .legend li{display:flex;align-items:center;gap:.4rem}
-:where(.legend .sw){width:.8rem;height:.8rem;background:var(--cream)}
+:where(.legend .sw){--c:var(--cream);width:.8rem;height:.8rem}
+.legend .sw{background:var(--c)}
