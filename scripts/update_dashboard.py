@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Refresh the "now_playing.log" dashboard page (/web-log/now-playing/).
 
-Pulls public data from Letterboxd (RSS) and Pinterest (RSS), renders
-static HTML, and writes it between marker comments in
+Pulls public data from Letterboxd (RSS), Goodreads (public profile page),
+and Pinterest (RSS), renders static HTML, and writes it between marker comments in
 docs/web-log/now-playing/index.html. Each source has its own markers.
 If a source fails, its previous content is kept.
 
@@ -23,9 +23,10 @@ from urllib.parse import urlsplit
 
 LETTERBOXD_USER = "iloveh0tdads"
 PINTEREST_USER = "hannahmontanaxoxo"
+GOODREADS_PROFILE = "https://www.goodreads.com/user/show/181465183-hannah-cardoza"
 
 UA = "hannahcardoza.com dashboard (+https://hannahcardoza.com)"
-IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com"}
+IMAGE_HOSTS = {"a.ltrbxd.com", "i.pinimg.com", "i.gr-assets.com"}
 DEFAULT_PAGE = Path(__file__).resolve().parent.parent / "docs" / "web-log" / "now-playing" / "index.html"
 
 
@@ -92,6 +93,40 @@ def render_letterboxd():
 
 
 
+def render_goodreads():
+    """Books in the "Currently Reading" box on the public profile page.
+
+    Goodreads has no public feed for this profile, so this reads the profile
+    HTML. If Goodreads changes the page, this raises and the previous content
+    is kept until the parser is updated.
+    """
+    page = fetch(GOODREADS_PROFILE).decode("utf-8", "replace")
+    start = page.find("is Currently Reading</a>")
+    if start < 0:
+        raise ValueError("currently reading section not found")
+    end = page.find("updatedTimestamp", start)
+    seg = page[start:end if end > 0 else start + 8000]
+    titles = [html.unescape(re.sub(r"<[^>]+>", "", m)).strip()
+              for m in re.findall(r'<a class="bookTitle"[^>]*>(.*?)</a>', seg, re.S)]
+    authors = [re.sub(r"\s+", " ", html.unescape(a)).strip()
+               for a in re.findall(r'<a class="authorName"[^>]*>(?:<span[^>]*>)?([^<]+)', seg)]
+    covers = [safe_image(re.sub(r"\._SX\d+_", "._SX318_", c))
+              for c in re.findall(r'<img[^>]+src="(https://i\.gr-assets\.com/[^"]+)"', seg)]
+    if not titles:
+        raise ValueError("no books in currently reading section")
+    cards = []
+    for i, title in enumerate(titles[:4]):
+        title = re.sub(r"\s*\([^)]*#[^)]*\)$", "", title)  # drop "(Series, #6)"
+        author = authors[i] if i < len(authors) else ""
+        cover = covers[i] if i < len(covers) else None
+        img = (f'<img src="{esc(cover)}" alt="Cover of {esc(title)}" loading="lazy" width="150" height="225"/>'
+               if cover else '<div class="dash-noposter"></div>')
+        by = f'<span class="dash-by">{esc(author)}</span>' if author else ""
+        cards.append(f'<li>{img}<span class="dash-cap">{esc(title)}</span>{by}</li>')
+    return ('<h3 class="dash-h">&gt; Reading</h3>'
+            '<ul class="dash-films">' + "".join(cards) + "</ul>")
+
+
 def render_pinterest():
     root = ET.fromstring(fetch(f"https://www.pinterest.com/{PINTEREST_USER}/feed.rss"))
     pins = []
@@ -108,7 +143,7 @@ def render_pinterest():
             + "</ul>")
 
 
-SOURCES = [("letterboxd", render_letterboxd), ("pinterest", render_pinterest)]
+SOURCES = [("letterboxd", render_letterboxd), ("goodreads", render_goodreads), ("pinterest", render_pinterest)]
 
 
 def replace_block(page, name, content):

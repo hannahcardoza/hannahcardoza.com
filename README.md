@@ -10,7 +10,7 @@ docs/                       Site root, served by GitHub Pages
 ├── about/index.html        About
 ├── experience/index.html   Experience, education, skills
 ├── web-log/index.html      Web Log
-├── web-log/now-playing/    Auto-updated dashboard (Letterboxd, Pinterest)
+├── web-log/now-playing/    Auto-updated dashboard (Letterboxd, Goodreads, Pinterest)
 ├── 404.html                Not found page
 ├── assets/
 │   ├── styles.css          Compiled Tailwind CSS from the original design (don't hand-edit)
@@ -44,7 +44,7 @@ To see the welcome popup again, clear the site's data in your browser (it's reme
 
 ## Web Log dashboard
 
-The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls public data from Letterboxd (RSS) and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/now-playing/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
+The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls public data from Letterboxd (RSS), Goodreads (public profile page), and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/now-playing/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
 
 - Run it locally: `python3 scripts/update_dashboard.py`
 - Run it on GitHub: Actions tab, "Update dashboard", "Run workflow"

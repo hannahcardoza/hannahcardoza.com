@@ -50,3 +50,4 @@
 .dash-pins img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:cover;border:1px solid var(--border)}
 .dash-foot{margin-top:1.4rem;font-size:.9rem;opacity:.6}
 @media (max-width:639px){.dash-films,.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-pins{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.dash-by{display:block;margin-top:.1rem;font-size:.85rem;opacity:.7}
