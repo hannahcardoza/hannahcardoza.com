@@ -1,0 +1,33 @@
+name: Update dashboard
+
+on:
+  schedule:
+    - cron: "17 11 * * *" # daily, around 6 to 7am Toronto time
+  workflow_dispatch: # allows a manual run from the Actions tab
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh dashboard data
+        run: python3 scripts/update_dashboard.py
+      - name: Check site
+        run: python3 scripts/check_site.py docs
+      - name: Commit and publish if changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Update Web Log dashboard"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true

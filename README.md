@@ -9,11 +9,11 @@ docs/                       Site root, served by GitHub Pages
 ├── index.html              Home
 ├── about/index.html        About
 ├── experience/index.html   Experience, education, skills
-├── web-log/index.html      Web Log
+├── web-log/index.html      Web Log (with auto-updated dashboard)
 ├── 404.html                Not found page
 ├── assets/
 │   ├── styles.css          Compiled Tailwind CSS from the original design (don't hand-edit)
-│   ├── site.css            Custom styles: ticker, contact and welcome popups, tags, legend
+│   ├── site.css            Custom styles: ticker, popups, tags, legend, dashboard
 │   ├── site.js             Footer visitor counter and one-time welcome popup
 │   └── og.png              Link preview image (screenshot of the home page)
 ├── favicon.svg, favicon.ico, apple-touch-icon.png
@@ -40,6 +40,15 @@ To see the welcome popup again, clear the site's data in your browser (it's reme
 - Experience tag colours are defined in `site.css` (`.t-software`, `.t-hardware`, and so on). A new tag needs a class there and, if it starts a new colour group, an entry in the legend.
 - After changing the home page, regenerate `assets/og.png` (a 1920×1080 screenshot, taken after the welcome popup has been dismissed) so link previews stay current.
 - Add new pages to `sitemap.xml`.
+
+## Web Log dashboard
+
+The pinned `now_playing.log` entry at the top of the Web Log is refreshed daily by `scripts/update_dashboard.py` (`.github/workflows/update-dashboard.yml`). It pulls public data from Letterboxd (RSS), Chess.com (public API), and Pinterest (RSS) and writes static HTML between `<!-- dash:NAME:start -->` / `<!-- dash:NAME:end -->` markers in `docs/web-log/index.html`. If a source fails, its previous content is kept. The job only commits when the data changed.
+
+- Run it locally: `python3 scripts/update_dashboard.py`
+- Run it on GitHub: Actions tab, "Update dashboard", "Run workflow"
+- Usernames are set at the top of the script
+- GitHub pauses scheduled jobs after 60 days without repo activity. If the dashboard stops updating, re-enable the workflow in the Actions tab.
 
 ## Checks
 
