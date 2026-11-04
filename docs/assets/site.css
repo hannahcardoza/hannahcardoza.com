@@ -17,4 +17,10 @@
 @media (max-width:639px){.hero-pc{display:block;zoom:.38}.hero-pc-wrap{margin-right:calc(17.5% - 42.56px)}}
 @media (max-width:374px){.hero-pc{zoom:.28}.hero-pc-wrap{margin-right:calc(17.5% - 31.36px)}}
 .tags{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0 0;padding:0;list-style:none}
-.tags li{font-family:VT323,Courier New,monospace;font-size:1rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;padding:.2rem .5rem;border:1px solid var(--cream);color:var(--cream)}
+.tags li{font-family:VT323,Courier New,monospace;font-size:1rem;line-height:1;text-transform:uppercase;letter-spacing:.08em;padding:.25rem .5rem;background:var(--cream);color:var(--background)}
+.tags .t-software{background:var(--klein);color:var(--cream)}
+.tags .t-product{background:var(--fuchsia);color:var(--cream)}
+.tags .t-hardware{background:var(--tangerine);color:var(--cream)}
+.tags .t-mechanical,.tags .t-manufacturing{background:var(--tan);color:var(--background)}
+.tags .t-business,.tags .t-strategy,.tags .t-finance{background:var(--citric);color:var(--klein)}
+.tags .t-healthcare{background:var(--aqua);color:var(--background)}
