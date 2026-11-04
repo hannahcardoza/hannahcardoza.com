@@ -299,7 +299,7 @@ def render_spotify():
             img = f'<img src="{esc(cover)}" alt="" loading="lazy"/>' if cover else '<span class="dash-noart"></span>'
             inner = f'{img}<span class="dash-cap">{esc(pl.get("name"))}</span>'
             cards.append(f'<li><a href="{esc(link)}" target="_blank" rel="noopener">{inner}</a></li>' if link else f"<li>{inner}</li>")
-        out += '<p class="dash-sub dash-sub-spot">Playlists</p><ul class="dash-lists">' + "".join(cards) + "</ul>"
+        out += '<p class="dash-sub dash-sub-spot">Recent playlists</p><ul class="dash-lists">' + "".join(cards) + "</ul>"
     return out
 
 
