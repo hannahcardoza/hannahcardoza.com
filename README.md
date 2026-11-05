@@ -66,7 +66,7 @@ python3 scripts/check_site.py docs
 
 ## Radio
 
-The RADIO button (bottom left) opens HC-FM, a small player that streams [SomaFM](https://somafm.com) stations (listener-supported, commercial-free). It never autoplays, remembers station/volume/open state in `localStorage` (`hc-radio`), shows the current track from SomaFM's public song feed, and falls back across three stream mirrors. Stations are listed at the top of the radio section in `site.js`.
+The RADIO button (bottom left) opens a GTA-style car radio: eight presets with FM frequencies, a burst of static between stations, and live track info where the station shares it. Stations are real, freely streamed public/community stations: Radio Swiss Jazz, FIP (Radio France), NTS, and KEXP. Track info comes from Radio France, NTS, and KEXP's public feeds. It never autoplays and remembers preset/volume/open state in `localStorage` (`hc-radio`). The station list is at the top of the radio section in `site.js`. SomaFM streams were tried first but don't play in Chrome.
 
 ## Analytics
 
