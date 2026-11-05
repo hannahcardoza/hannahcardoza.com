@@ -1,15 +1,19 @@
 // Footer visitor counter, powered by GoatCounter's public counter.
 // Requires "Allow adding visitor counts on your website" in GoatCounter settings.
 (function () {
-  var el = document.getElementById('visitor-count');
-  if (!el) return;
-  fetch('https://hannahcardoza.goatcounter.com/counter/TOTAL.json')
-    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-    .then(function (d) {
-      var n = String(d.count).replace(/\D/g, '');
-      if (n) el.textContent = n.padStart(6, '0');
-    })
-    .catch(function () {});
+  function fill() {
+    var el = document.getElementById('visitor-count');
+    if (!el) return;
+    fetch('https://hannahcardoza.goatcounter.com/counter/TOTAL.json')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (d) {
+        var n = String(d.count).replace(/\D/g, '');
+        if (n) el.textContent = n.padStart(6, '0');
+      })
+      .catch(function () {});
+  }
+  fill();
+  document.addEventListener('hc:navigate', fill);
 })();
 
 // One-time welcome popup. Shown on a visitor's first page view only.
@@ -42,8 +46,7 @@
 // Slim sticky nav that slides in once the big rainbow tabs scroll out of view.
 // Built from the page's own nav, so every page gets it without extra markup.
 (function () {
-  var nav = document.querySelector('header nav');
-  if (!nav) return;
+  var nav = null, bar = null, ticking = false;
   var labels = {
     '/': ['Introduction', 'Intro'],
     '/about': ['About Me', 'About'],
@@ -51,6 +54,11 @@
     '/web-log': ['Web Log', 'Log']
   };
   var colors = ['klein', 'fuchsia', 'tangerine', 'citric'];
+  function build() {
+  nav = document.querySelector('header nav');
+  if (bar) bar.remove();
+  bar = null;
+  if (!nav) return;
   var items = Array.prototype.map.call(nav.querySelectorAll('a'), function (a) {
     var href = a.getAttribute('href').replace(/\/$/, '') || '/';
     var label = labels[href] || [a.textContent, a.textContent];
@@ -59,16 +67,18 @@
     return '<li><a class="mini-' + color + '" href="' + a.getAttribute('href') + '"' + current + '>' +
       '<span class="full">' + label[0] + '</span><span class="short">' + label[1] + '</span></a></li>';
   }).join('');
-  var bar = document.createElement('nav');
+  bar = document.createElement('nav');
   bar.className = 'mini-nav';
   bar.setAttribute('aria-label', 'Quick navigation');
   bar.inert = true;
   bar.innerHTML = '<div class="mini-inner"><a class="mini-name" href="/">' +
     '<span class="full">Hannah Cardoza</span><span class="short">HC</span></a><ul>' + items + '</ul></div>';
   document.body.appendChild(bar);
-  var ticking = false;
+  update();
+  }
   function update() {
     ticking = false;
+    if (!nav || !bar) return;
     var show = nav.getBoundingClientRect().bottom < 0;
     if (show !== bar.classList.contains('show')) {
       bar.classList.toggle('show', show);
@@ -78,7 +88,8 @@
   window.addEventListener('scroll', function () {
     if (!ticking) { ticking = true; requestAnimationFrame(update); }
   }, { passive: true });
-  update();
+  build();
+  document.addEventListener('hc:navigate', build);
 })();
 
 // HC-FM: a GTA-style car radio. Eight presets of real, freely streamed
@@ -290,6 +301,74 @@
     }
   });
 
+  window.HCRadio = { isPlaying: function () { return playing; } };
   render();
   if (state.open) open(true);
+})();
+
+// Keep the radio playing across pages. While it's on, internal links swap in
+// the next page's content instead of reloading, so the audio never stops.
+// With the radio off, links behave normally (full page loads).
+(function () {
+  if (!window.fetch || !window.DOMParser || !history.pushState) return;
+  var PAGE = 'body > div.mx-auto';
+  var busy = false;
+
+  function eligible(a, e) {
+    if (!window.HCRadio || !window.HCRadio.isPlaying()) return false;
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
+    if (a.target && a.target !== '_self') return false;
+    if (a.hasAttribute('download')) return false;
+    var url = new URL(a.href, location.href);
+    if (url.origin !== location.origin) return false;
+    if (url.pathname === location.pathname && url.hash) return false;
+    return true;
+  }
+
+  function go(url, push) {
+    if (busy) return;
+    busy = true;
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (r) {
+        if (!r.ok && r.status !== 404) throw new Error('status ' + r.status);
+        return r.text();
+      })
+      .then(function (text) {
+        var doc = new DOMParser().parseFromString(text, 'text/html');
+        var next = doc.querySelector(PAGE), cur = document.querySelector(PAGE);
+        if (!next || !cur) throw new Error('layout not found');
+        cur.replaceWith(document.importNode(next, true));
+        document.title = doc.title;
+        ['description', 'og:title', 'og:description'].forEach(function (k) {
+          var sel = k.indexOf('og:') === 0 ? 'meta[property="' + k + '"]' : 'meta[name="' + k + '"]';
+          var a = document.querySelector(sel), b = doc.querySelector(sel);
+          if (a && b) a.setAttribute('content', b.getAttribute('content'));
+        });
+        if (push) history.pushState({ hcSoft: true }, '', url);
+        var hash = new URL(url, location.href).hash;
+        var target = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
+        if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
+        var main = document.querySelector('main');
+        if (main) { main.setAttribute('tabindex', '-1'); main.focus({ preventScroll: true }); }
+        if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: location.pathname });
+        document.dispatchEvent(new CustomEvent('hc:navigate'));
+      })
+      .catch(function () { location.href = url; })
+      .then(function () { busy = false; });
+  }
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || !eligible(a, e)) return;
+    e.preventDefault();
+    go(a.href, true);
+  });
+
+  var lastPath = location.pathname;
+  document.addEventListener('hc:navigate', function () { lastPath = location.pathname; });
+  window.addEventListener('popstate', function () {
+    if (location.pathname === lastPath) return;  // only the #hash changed
+    if (window.HCRadio && window.HCRadio.isPlaying()) go(location.href, false);
+    else location.reload();
+  });
 })();

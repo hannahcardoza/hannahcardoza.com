@@ -68,6 +68,8 @@ python3 scripts/check_site.py docs
 
 The RADIO button (bottom left) opens a GTA-style car radio: eight presets with FM frequencies, a burst of static between stations, and live track info where the station shares it. Stations are real, freely streamed public/community stations: Radio Swiss Jazz, FIP (Radio France), NTS, and KEXP. Track info comes from Radio France, NTS, and KEXP's public feeds. It never autoplays and remembers preset/volume/open state in `localStorage` (`hc-radio`). The station list is at the top of the radio section in `site.js`. SomaFM streams were tried first but don't play in Chrome.
 
+While the radio is playing, internal links swap in the next page's content instead of doing a full reload (`site.js`, "Keep the radio playing across pages"), so the music doesn't stop. Code that sets up page content should listen for the `hc:navigate` event, which fires after each swap (the visitor counter and sticky nav already do). With the radio off, links are normal page loads.
+
 ## Analytics
 
 Page views are tracked with [GoatCounter](https://hannahcardoza.goatcounter.com) (no cookies). The footer visitor number comes from GoatCounter's public counter, which needs "Allow adding visitor counts on your website" turned on in GoatCounter settings. Visits from localhost aren't counted.
