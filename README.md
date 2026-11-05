@@ -15,7 +15,7 @@ docs/                       Site root, served by GitHub Pages
 ├── assets/
 │   ├── styles.css          Compiled Tailwind CSS from the original design (don't hand-edit)
 │   ├── site.css            Custom styles: ticker, popups, tags, legend, dashboard
-│   ├── site.js             Visitor counter, welcome popup, and sticky mini nav
+│   ├── site.js             Visitor counter, welcome popup, sticky mini nav, HC-FM radio
 │   └── og.png              Link preview image (screenshot of the home page)
 ├── favicon.svg, favicon.ico, apple-touch-icon.png
 ├── robots.txt, sitemap.xml
@@ -63,6 +63,10 @@ The dashboard page at `/web-log/now-playing/` is refreshed daily by `scripts/upd
 ```sh
 python3 scripts/check_site.py docs
 ```
+
+## Radio
+
+The RADIO button (bottom left) opens HC-FM, a small player that streams [SomaFM](https://somafm.com) stations (listener-supported, commercial-free). It never autoplays, remembers station/volume/open state in `localStorage` (`hc-radio`), shows the current track from SomaFM's public song feed, and falls back across three stream mirrors. Stations are listed at the top of the radio section in `site.js`.
 
 ## Analytics
 
